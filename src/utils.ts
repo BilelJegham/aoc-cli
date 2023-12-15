@@ -15,7 +15,8 @@ import {
   builtinTemplates,
 } from "./templates";
 
-export const KEYTAR_SERVICE_NAME = "jakzo-aoc";
+export const KEYTAR_SERVICE_NAME =
+  process.env.NODE_ENV === "production" ? "jakzo-aoc" : "jakzo-aoc-dev";
 export const DEFAULT_ACCOUNT = "_default";
 export const TEMPLATE_JSON = "aoc.json";
 const BASE_URL = "https://adventofcode.com";

@@ -35,9 +35,8 @@ export const main = async (
 ): Promise<void> => {
   await getSessionToken(account, true);
   await countdownToStart(undefined, getChallengeStartTime(year, day).getTime());
-  // TODO: Continue to part 2 if part 1 is already completed
-  let part = 1;
-  const desc = await printDescription(year, day, part, account);
+  const desc = await printDescription(year, day, undefined, account);
+  let part = desc[1].length;
   const dir = getDirForDay(day);
   await fse.ensureDir(dir);
   const inputFile = path.join(dir, "input.txt");
@@ -240,6 +239,13 @@ export const submit = async (
   };
 };
 
+const formatDuration = (ms: number): string => {
+  if (ms < 0) ms = -ms;
+  if (ms < 1000) return Intl.NumberFormat("en-US").format(ms) + "ms";
+
+  return Intl.NumberFormat("en-US").format(ms / 1000) + "s";
+};
+
 export const runAndWatch = (
   commandBuilder: CommandBuilder,
   dir = process.cwd(),
@@ -254,6 +260,7 @@ export const runAndWatch = (
   });
 
   let killPrevRun: undefined | (() => void);
+  let timeStart = Date.now();
   return chokidar
     .watch(filesToWatch.map((file) => path.resolve(dir, file)))
     .on("all", () => {
@@ -263,13 +270,13 @@ export const runAndWatch = (
       let killed = false;
       const runNextCommand = (code?: number): void => {
         if (killed) return;
-
+        const duration = formatDuration(Date.now() - timeStart);
         if (code) {
-          console.warn(chalk.yellow("Finished with error"));
+          console.warn(chalk.yellow("Finished with error") + " " + duration);
           return;
         }
         if (++i >= commands.length) {
-          console.log(chalk.yellow("Finished"));
+          console.log(chalk.yellow("Finished") + " " + duration);
           return;
         }
 
@@ -280,6 +287,7 @@ export const runAndWatch = (
           ),
           [command, ...args].join(" ")
         );
+        timeStart = Date.now();
         const cp = spawn(command, args, { cwd, stdio: "inherit" });
         cp.on("close", runNextCommand);
         killPrevRun = () => {
